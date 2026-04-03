@@ -1,0 +1,6 @@
+# 1. Agar koi /admin likhe toh admin.html khul jaye
+/admin    /admin.html    200
+
+# 2. Single Page App (SPA) ke liye saare routes index par bhej do
+# Isse 404 Page Not Found ka error khatam ho jata hai
+/* /index.html    200
