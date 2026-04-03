@@ -3,92 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RaceMate registration</title>
-    <!-- Excel Library -->
+    <title>RaceMate Admin</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --blue: #1a73e8; --red: #d93025; --green: #1e8e3e; --gray: #f8f9fa; --border: #dadce0; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--gray); margin: 0; padding: 15px; color: #3c4043; }
-        .nav { display: flex; gap: 10px; margin-bottom: 25px; justify-content: center; flex-wrap: wrap; }
-        .tab-btn { padding: 12px 20px; cursor: pointer; border: 1px solid var(--border); background: white; border-radius: 8px; font-weight: 600; transition: 0.3s; font-size: 14px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--gray); margin: 0; padding: 10px; color: #3c4043; box-sizing: border-box; }
+        
+        /* 1. WELCOME SCREEN STYLES */
+        #welcomeScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 2000; color: white; text-align: center;
+        }
+        .go-btn {
+            background: var(--blue); color: white; border: none; padding: 18px 40px;
+            font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer;
+            transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-top: 20px;
+        }
+        .go-btn:hover { transform: scale(1.05); background: #1557b0; }
+
+        /* Navigation Tabs */
+        .nav { display: flex; gap: 5px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+        .tab-btn { padding: 10px 15px; cursor: pointer; border: 1px solid var(--border); background: white; border-radius: 8px; font-weight: 600; transition: 0.3s; font-size: 13px; flex: 1; min-width: 120px; text-align: center; }
         .tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); box-shadow: 0 2px 6px rgba(26,115,232,0.3); }
-        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); max-width: 1100px; margin: auto; }
+        
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); max-width: 1000px; margin: auto; box-sizing: border-box; }
         .hidden { display: none !important; }
+        
         label { display: block; font-weight: 600; margin-top: 15px; margin-bottom: 5px; font-size: 14px; }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 15px; margin-bottom: 10px; }
         .race-box { border: 1px solid #e8eaed; padding: 10px; margin-top: 10px; border-radius: 8px; background: #fdfdfd; display: flex; align-items: center; gap: 10px; }
         .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
         .btn-save { background: var(--green); color: white; width: 100%; margin-top: 20px; }
+        
         .table-wrapper { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border); border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; background: white; min-width: 1000px; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 900px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
         th { background: #f8f9fa; color: #5f6368; }
-        .edit-input { width: 100%; border: 1px solid transparent; background: transparent; padding: 5px; border-radius: 4px; font-size: 13px; }
+        
+        .edit-input { border: 1px solid transparent; background: transparent; padding: 5px; border-radius: 4px; font-size: 13px; width: 100%; }
         .edit-input:hover, .edit-input:focus { border-color: var(--blue); background: #fff; outline: none; }
+
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; visibility: hidden; opacity: 0; transition: 0.3s; }
         .modal-overlay.active { visibility: visible; opacity: 1; }
-        .modal-box { background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; transform: translateY(-20px); transition: 0.3s; }
+        .modal-box { background: white; padding: 20px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; transform: translateY(-20px); transition: 0.3s; }
         .modal-overlay.active .modal-box { transform: translateY(0); }
         .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-        .m-btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+        .m-btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; flex: 1; }
+
+        @media (max-width: 600px) {
+            .tab-btn { font-size: 11px; padding: 8px; min-width: 90px; }
+            .container { padding: 15px; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="customModal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 id="modalTitle">Alert</h3>
-            <p id="modalMsg"></p>
-            <div class="modal-btns" id="modalBtnContainer"></div>
-        </div>
+    <div id="welcomeScreen">
+        <h1 style="margin:0; font-size: 36px;">RaceMate Pro</h1>
+        <p style="opacity: 0.8;">Secure Event Management System</p>
+        <button class="go-btn" onclick="enterAdmin()">GO TO ADMIN PANEL</button>
     </div>
 
-    <div class="nav">
-        <button class="tab-btn active" id="tab-create-btn" onclick="switchTab('create')">CREATE/EDIT EVENT</button>
-        <button class="tab-btn" id="tab-manage-btn" onclick="switchTab('manage')">MANAGE EVENTS</button>
-        <button class="tab-btn" id="tab-data-btn" onclick="switchTab('data')">PARTICIPANTS DATA</button>
-    </div>
-
-    <div id="createTab" class="container">
-        <h2 id="formHeading">Setup New Event</h2>
-        <input type="hidden" id="editingEventId">
-        <label>Event Name</label>
-        <input type="text" id="eventName" placeholder="Event Name" autocomplete="off">
-        <label>Event Date</label>
-        <input type="date" id="eventDate" autocomplete="off">
-        <label>Access Code</label>
-        <input type="text" id="accessCode" placeholder="Private Access Code" autocomplete="off">
-        <h3>Race Categories</h3>
-        <div id="racesContainer"></div>
-        <button class="btn" style="background:#eee; margin-top:10px;" onclick="addNewRaceRow()">+ Add Category</button>
-        <button class="btn btn-save" id="saveBtn" onclick="saveFullEvent()">SAVE EVERYTHING</button>
-        <button class="btn" id="cancelBtn" style="background:#666; color:white; width:100%; margin-top:10px; display:none;" onclick="location.reload()">CANCEL EDIT</button>
-    </div>
-
-    <div id="manageTab" class="container hidden">
-        <h2>All Events</h2>
-        <div class="table-wrapper">
-            <table>
-                <thead><tr><th>Event Name</th><th>Date</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody id="eventListBody"></tbody>
-            </table>
+    <div id="adminContent" class="hidden">
+        <div id="customModal" class="modal-overlay">
+            <div class="modal-box">
+                <h3 id="modalTitle">Alert</h3>
+                <p id="modalMsg"></p>
+                <div class="modal-btns" id="modalBtnContainer"></div>
+            </div>
         </div>
-    </div>
 
-    <div id="dataTab" class="container hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <h2>Participants Records</h2>
-            <button class="btn" style="background:#217346; color:white;" onclick="exportToExcel()">📥 DOWNLOAD EXCEL</button>
+        <div class="nav">
+            <button class="tab-btn active" id="tab-create-btn" onclick="switchTab('create')">CREATE/EDIT</button>
+            <button class="tab-btn" id="tab-manage-btn" onclick="switchTab('manage')">MANAGE</button>
+            <button class="tab-btn" id="tab-data-btn" onclick="switchTab('data')">DATA</button>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin: 20px 0;">
-            <select id="selectEventData" onchange="loadCategoriesForData()"><option value="">-- Select Event --</option></select>
-            <select id="selectCategoryData" onchange="loadParticipants()"><option value="">-- All Categories --</option></select>
+
+        <div id="createTab" class="container">
+            <h2 id="formHeading">Setup New Event</h2>
+            <input type="hidden" id="editingEventId">
+            <label>Event Name</label>
+            <input type="text" id="eventName" placeholder="Event Name" autocomplete="off">
+            <label>Event Date</label>
+            <input type="date" id="eventDate" autocomplete="off">
+            <label>Access Code</label>
+            <input type="text" id="accessCode" placeholder="Private Access Code" autocomplete="off">
+            <h3>Race Categories</h3>
+            <div id="racesContainer"></div>
+            <button class="btn" style="background:#eee; margin-top:10px; width: 100%;" onclick="addNewRaceRow()">+ Add Category</button>
+            <button class="btn btn-save" id="saveBtn" onclick="saveFullEvent()">SAVE EVERYTHING</button>
+            <button class="btn" id="cancelBtn" style="background:#666; color:white; width:100%; margin-top:10px; display:none;" onclick="location.reload()">CANCEL EDIT</button>
         </div>
-        <div class="table-wrapper">
-            <table>
-                <thead><tr><th>BIB</th><th>Name</th><th>Category</th><th>Phone</th><th>Email</th><th>DOB</th><th>Gender</th><th>Action</th></tr></thead>
-                <tbody id="participantTableBody"></tbody>
-            </table>
+
+        <div id="manageTab" class="container hidden">
+            <h2>All Events</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Event Name</th><th>Date</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="eventListBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="dataTab" class="container hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <h2 style="margin:0;">Participants Records</h2>
+                <button class="btn" style="background:#217346; color:white;" onclick="exportToExcel()">📥 EXCEL</button>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin: 15px 0;">
+                <select id="selectEventData" onchange="loadCategoriesForData()"><option value="">-- Select Event --</option></select>
+                <select id="selectCategoryData" onchange="loadParticipants()"><option value="">-- All Categories --</option></select>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>BIB</th><th>Name</th><th>Category</th><th>Phone</th><th>Email</th><th>DOB</th><th>Gender</th><th>Action</th></tr></thead>
+                    <tbody id="participantTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -107,6 +140,12 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // 3. ENTER ADMIN LOGIC
+    window.enterAdmin = () => {
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('adminContent').classList.remove('hidden');
+    };
 
     window.showPopup = (title, msg, type = 'alert', onConfirm = null) => {
         const modal = document.getElementById('customModal');
@@ -143,7 +182,6 @@
     window.addNewRaceRow = (val = "") => {
         const div = document.createElement('div');
         div.className = 'race-box';
-        // Precise Check: Row marked as existing if it has a value on load
         div.setAttribute('data-existing', val ? "true" : "false");
         div.innerHTML = `<input type="text" class="race-name" value="${val}" placeholder="Race Name" style="flex:1" autocomplete="off" ${val ? 'readonly style="background:#f1f1f1"' : ''}><button style="color:red; background:none; border:none; cursor:pointer;" onclick="this.parentElement.remove()">X</button>`;
         document.getElementById('racesContainer').appendChild(div);
@@ -155,14 +193,11 @@
         const date = document.getElementById('eventDate').value;
         const code = document.getElementById('accessCode').value;
         const raceRows = document.querySelectorAll('.race-box');
-        
         if(!name || !date || !code) return showPopup('Error', 'Sabhi fields bhariye!');
-        
         try {
             if(!editId) {
                 const checkSnap = await getDocs(query(collection(db, "Events"), where("accessCode", "==", code)));
-                if(!checkSnap.empty) return showPopup('Error', 'Yeh Access Code pehle hi use ho chuka hai.');
-                
+                if(!checkSnap.empty) return showPopup('Error', 'Access Code Already Used.');
                 const eventDoc = await addDoc(collection(db, "Events"), { name, date, accessCode: code, status: "enabled", createdAt: serverTimestamp() });
                 for(let row of raceRows) {
                     const rInput = row.querySelector('.race-name');
@@ -170,20 +205,12 @@
                 }
                 showPopup('Success', 'Event Created!', 'alert', () => location.reload());
             } else {
-                // UPDATE EVENT DETAILS
                 await updateDoc(doc(db, "Events", editId), { name, date, accessCode: code });
-                
-                // ADD ONLY NEW CATEGORIES (Avoid duplicates)
                 for(let row of raceRows) {
                     const rInput = row.querySelector('.race-name');
-                    const isNewRow = row.getAttribute('data-existing') === "false";
-                    
-                    if(rInput.value.trim() !== "" && isNewRow) {
-                        // Double check against database to be 100% safe
+                    if(rInput.value.trim() !== "" && row.getAttribute('data-existing') === "false") {
                         const checkRace = await getDocs(query(collection(db, "Races"), where("eventId", "==", editId), where("raceName", "==", rInput.value.trim())));
-                        if(checkRace.empty) {
-                            await addDoc(collection(db, "Races"), { eventId: editId, raceName: rInput.value.trim() });
-                        }
+                        if(checkRace.empty) await addDoc(collection(db, "Races"), { eventId: editId, raceName: rInput.value.trim() });
                     }
                 }
                 showPopup('Success', 'Updated Successfully!', 'alert', () => location.reload());
@@ -220,8 +247,7 @@
             races.forEach(d => batch.delete(d.ref));
             const parts = await getDocs(query(collection(db, "Participants"), where("eventId", "==", id)));
             parts.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-            loadEventsList();
+            await batch.commit(); loadEventsList();
         });
     };
 
@@ -240,7 +266,7 @@
     };
 
     async function fetchEventsForData() {
-        const sel = document.getElementById('selectEventData'); sel.innerHTML = '<option value="">-- Select Event --</option>';
+        const sel = document.getElementById('selectEventData'); sel.innerHTML = '<option value="">-- Select --</option>';
         const snap = await getDocs(query(collection(db, "Events"), orderBy("createdAt", "desc")));
         snap.forEach(d => sel.innerHTML += `<option value="${d.id}">${d.data().name}</option>`);
     }
@@ -259,18 +285,15 @@
         const cat = document.getElementById('selectCategoryData').value;
         const tbody = document.getElementById('participantTableBody');
         if(!evId) { tbody.innerHTML = ""; return; }
-        
         const evSnap = await getDoc(doc(db, "Events", evId));
         if(!evSnap.exists() || evSnap.data().status === 'disabled') {
             tbody.innerHTML = "<tr><td colspan='9' style='text-align:center; color:red; font-weight:bold;'>Event is disabled.</td></tr>";
             return;
         }
-
         tbody.innerHTML = "Fetching...";
         let q = query(collection(db, "Participants"), where("eventId", "==", evId));
         if(cat) q = query(collection(db, "Participants"), where("eventId", "==", evId), where("category", "==", cat));
-        const snap = await getDocs(q);
-        tbody.innerHTML = "";
+        const snap = await getDocs(q); tbody.innerHTML = "";
         snap.forEach(d => {
             const p = d.data();
             tbody.innerHTML += `<tr>
@@ -298,15 +321,12 @@
         const evName = document.getElementById('selectEventData').options[document.getElementById('selectEventData').selectedIndex].text;
         const cat = document.getElementById('selectCategoryData').value;
         if(!evId) return showPopup('Alert', 'Pehle Event select karein!');
-        
         const q = cat ? query(collection(db, "Participants"), where("eventId", "==", evId), where("category", "==", cat)) : query(collection(db, "Participants"), where("eventId", "==", evId));
         const snap = await getDocs(q);
-        const data = [];
-        snap.forEach(d => { const p = d.data(); data.push({ BIB: p.bib, Name: p.name, Category: p.category, Phone: p.phone, Email: p.email || '', DOB: p.dob, Gender: p.gender }); });
+        const data = snap.docs.map(d => ({ BIB: d.data().bib, Name: d.data().name, Category: d.data().category, Phone: d.data().phone, Email: d.data().email || '', DOB: d.data().dob, Gender: d.data().gender }));
         const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Records");
-        XLSX.writeFile(wb, `${evName}_Data.xlsx`);
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Records");
+        XLSX.writeFile(wb, `${evName}.xlsx`);
     };
 
     addNewRaceRow();
